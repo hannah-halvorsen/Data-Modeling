@@ -1,0 +1,973 @@
+---
+title: "HARVARD EXTENSION SCHOOL"
+subtitle: "EXT CSCI E-106 Model Data Class Group Project Template"
+author:
+- Sheri Cunningham
+- Daniel Yinanc
+- Hannah Halvorsen
+- Sravan Katepalli
+- Swapnil Daingade
+- Phu Thai
+tags: [logistic, neuronal networks, etc..]
+abstract: |
+  This is the location for your abstract.
+  It must consist of two paragraphs.
+date: "`r format(Sys.time(), '%d %B %Y')`"
+geometry: margin=1.3cm
+output:
+  pdf_document:
+    toc: yes
+    toc_depth: 2
+  html_document:
+    df_print: paged
+editor_options: 
+  markdown: 
+    wrap: 72
+---
+
+\newpage
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(readr)
+HouseSales<-read.csv("KC_House_Sales.csv")
+```
+
+\newpage
+
+## House Sales in King County, USA data to be used in the Final Project
+
+|   Variable    | Description                                                                                                                                                                                           |
+|:------------------------------------:|:---------------------------------|
+|      id       | **Unique ID for each home sold (it is not a predictor)**                                                                                                                                              |
+|     date      | *Date of the home sale*                                                                                                                                                                               |
+|     price     | *Price of each home sold*                                                                                                                                                                             |
+|   bedrooms    | *Number of bedrooms*                                                                                                                                                                                  |
+|   bathrooms   | *Number of bathrooms, where ".5" accounts for a bathroom with a toilet but no shower*                                                                                                                 |
+|  sqft_living  | *Square footage of the apartment interior living space*                                                                                                                                               |
+|   sqft_lot    | *Square footage of the land space*                                                                                                                                                                    |
+|    floors     | *Number of floors*                                                                                                                                                                                    |
+|  waterfront   | *A dummy variable for whether the apartment was overlooking the waterfront or not*                                                                                                                    |
+|     view      | *An index from 0 to 4 of how good the view of the property was*                                                                                                                                       |
+|   condition   | *An index from 1 to 5 on the condition of the apartment,*                                                                                                                                             |
+|     grade     | *An index from 1 to 13, where 1-3 falls short of building construction and design, 7 has an average level of construction and design, and 11-13 has a high-quality level of construction and design.* |
+|  sqft_above   | *The square footage of the interior housing space that is above ground level*                                                                                                                         |
+| sqft_basement | *The square footage of the interior housing space that is below ground level*                                                                                                                         |
+|   yr_built    | *The year the house was initially built*                                                                                                                                                              |
+| yr_renovated  | *The year of the house's last renovation*                                                                                                                                                             |
+|    zipcode    | *What zipcode area the house is in*                                                                                                                                                                   |
+|      lat      | *Latitude*                                                                                                                                                                                            |
+|     long      | *Longitude*                                                                                                                                                                                           |
+| sqft_living15 | *The square footage of interior housing living space for the nearest 15 neighbors*                                                                                                                    |
+|  sqft_lot15   | *The square footage of the land lots of the nearest 15 neighbors*                                                                                                                                     |
+
+\newpage
+
+## Instructions:
+
+0.  Join a team with your fellow students with appropriate size (Four
+    Students total)
+1.  Load and Review the dataset named "KC_House_Sales'csv
+
+```{r}
+data <- read.csv("KC_House_Sales.csv")
+original_data <- data
+summary(data)
+str(data)
+```
+
+```{r}
+#install.packages('TeachingDemos')
+
+#library(dplyr)
+#check to see if few enough zipcodes to turn into categorical variable. otherwise
+#drop zipcode in later chunk
+#n_distinct(data$zipcode)
+```
+
+```{r}
+#convert date to usable format for calculations 
+#substr(date, start = 1, stop = 4)
+#substr(date, 1, 4)
+#str(data)
+```
+
+```{r}
+#built_age <- date - yr_built
+#renovated_age <- date-yr_renovated
+
+
+#turn price into numeric
+data$price <- as.numeric(gsub('[$,]', '', data$price))
+
+str(data)
+```
+
+```{r}
+#drop the noted variables
+#
+library(fastDummies)
+
+data$house_age = as.integer(substr(data$date, 0, 4)) - data$yr_built
+data$renovated = as.numeric(data$yr_renovated != 0)
+data <- dummy_cols(data, 
+                   select_columns = "zipcode", remove_first_dummy =TRUE)
+
+# yr_built and yr_renovated is transformed in this way to house_age and renovated, removed to prevent collinearity
+# sqft_basement removed due to high collinearity with sqft_above
+# zipcode_98199 removed to high collinearity with other zipcodes
+data = subset(data, select = -c(id, lat, long, date, yr_built, yr_renovated, sqft_basement, zipcode_98199, zipcode))
+```
+
+2.  Create the train data set which contains 70% of the data and use
+    set.seed (1023). The remaining 30% will be your test data set.
+
+```{r}
+set.seed(1023)
+n<-dim(data)[1]
+IND<-sample(c(1:n),round(n*0.7))
+train.dat<-data[IND,]
+test.dat<-data[-c(IND),]
+```
+
+3.  Investigate the data and combine the level of categorical variables
+    if needed and drop variables as needed. For example, you can drop
+    id, Latitude, Longitude, etc.
+
+```{r}
+#exploring the data and no issues with NAs; no NAs found
+colSums(is.na(data))
+
+```
+
+```{r}
+#create new variable to simplify yr_renovated to simply renovated or note since most properties are not renovated
+#is_renovated = data$is_renovated
+#make is_renovated = 1 if the property has been renovated
+#data$is_renovated =I(data$yr_renovated>0)*1
+
+```
+
+```{r}
+price<-data$price
+bedrooms<-data$bedrooms
+bathrooms<-data$bathrooms
+sqft_living<-data$sqft_living
+sqft_lot<-data$sqft_lot
+floors<-data$floors
+waterfront<-data$waterfront
+view<-data$view
+condition<-data$condition
+grade<-data$grade
+sqft_above<-data$sqft_above
+sqft_basement<-data$sqft_basement
+yr_renovated<-data$yr_renovated
+sqft_living15<-data$sqft_living15
+sqft_lot15<-data$sqft_lot15
+house_age <- data$house_age
+renovated <- data$renovated
+
+par(mfrow=c(2,2))
+plot(bedrooms, price, 
+main="Bedrooms vs Price"); abline(lm(price~bedrooms),col="red")
+plot(bathrooms, price, 
+main="Bathrooms vs Price"); abline(lm(price~bathrooms),col="green")
+plot(sqft_living, price, 
+main="Sqft_living vs Price"); abline(lm(price~sqft_living),col="blue")
+plot(sqft_lot, price, 
+main="Sqft_lot vs Price"); abline(lm(price~sqft_lot),col="purple")
+plot(floors, price, 
+main="Floors vs Price"); abline(lm(price~floors),col="yellow")
+plot(waterfront, price, 
+main="Waterfront vs Price"); abline(lm(price~waterfront),col="orange")
+plot(view, price, 
+main="View vs Price"); abline(lm(price~view),col="red")
+plot(condition, price, 
+main="Condition vs Price"); abline(lm(price~condition),col="green")
+plot(grade, price, 
+main="Grade vs Price"); abline(lm(price~grade),col="blue")
+plot(sqft_above, price, 
+main="Sqft_above vs Price"); abline(lm(price~sqft_above),col="purple")
+#plot(sqft_basement, price, 
+#main="Sqft_basement vs Price"); abline(lm(price~sqft_basement),col="yellow")
+#plot(is_renovated, price, 
+#main="is_renovated vs Price"); abline(lm(price~is_renovated),col="orange")
+plot(sqft_living15, price, 
+main="Sqft_living15 vs Price"); abline(lm(price~sqft_living15),col="red")
+plot(sqft_lot15, price, 
+main="sqft_lot15 vs Price"); abline(lm(price~sqft_lot15),col="green")
+plot(house_age, price, 
+main="house_age vs Price"); abline(lm(price~house_age),col="blue")
+plot(renovated, price, 
+main="renovated vs Price"); abline(lm(price~renovated),col="purple")
+
+```
+
+4.  Build a regression model to predict price.
+
+```{r}
+model <-lm(price ~ ., data = train.dat)
+summary(model)
+```
+
+```{r}
+#NA for sqft_basement may be linearly related to another variable and therefore 
+#shows NA. Thus dropping sqft_basement
+#data = subset(data, select = -c(sqft_basement))
+#model <-lm(price ~ ., data = data)
+#summary(model)
+```
+
+```{r}
+
+library(car)
+#Check for outliers
+outlierTest(model)
+```
+
+5.  Create scatter plots and a correlation matrix for the train data
+    set. Interpret the possible relationship between the response.
+
+**Conclusion**
+
+Price is highly correlated with bedrooms, sqft_living, bathrooms, grade,
+sqft_above and sqft_living15.
+
+We can see multicollinearity problems with bedrooms to bathrooms and
+sqft_living
+
+```{r}
+library(corrplot)
+library("ggplot2")                     # Load ggplot2 package
+library("GGally")                      # Load GGally package
+
+
+# Quick Correlation Matrix Visualization shows that sqft_above, sqft_living, grade and price are highly correlated.
+library(dplyr)
+correl <- round(cor(data),2)
+cor_df <- as.data.frame(as.table(correl))
+cor_df %>%  arrange(desc(Freq)) %>% filter(abs(Freq)>0.6 & abs(Freq)<1)
+
+
+# None of the independent variables have VIF > 5 indicating multi-collinearity
+# As we removed them at data manipulation section
+vif(model)
+```
+
+6.  Build the best multiple linear models by using the stepwise
+    selection method. Compare the performance of the best two linear
+    models.
+
+```{r}
+library(olsrr)
+library(car)
+
+# Stepwise regression yielded bathrooms + sqft_living +  view + grade + sqft_above as the predictor set to keep.
+# We name that as model_2 which is the best two linear models we have.
+# takes about an hour to run
+k1 <- ols_step_both_p(model, pent=0.05, prem=0.05)
+plot(k1)
+
+model_2 <- lm(price ~ . - zipcode_98024 - zipcode_98027 - zipcode_98074 - zipcode_98075 - zipcode_98118 - zipcode_98133 -sqft_lot15, data = train.dat)
+summary(model_2)
+
+# Lambda of zero means a log transform of Y is in order
+boxCox(model_2)
+
+# Result improved R^2 from 0.7966 to 0.855
+model_log <-lm(log(price) ~ . - zipcode_98024 - zipcode_98027 - zipcode_98074 - zipcode_98075 - zipcode_98118 - zipcode_98133 -sqft_lot15, data = train.dat)
+summary(model_log)
+
+```
+
+7.  Make sure that model assumption(s) are checked for the final model.
+    Apply remedy measures (transformation, etc.) that helps satisfy the
+    assumptions.
+
+```{r}
+# Graph the distribution of the residuals. This returns a large amount of outliers
+boxplot(model_log$residuals,col="orange",
+main="distribution of the residuals")
+
+# Plot Residuals vs Fitted. The residuals are far from the line and demonstrate a funnel pattern that starts to drop below the line, but it seems to only be a few points. 
+par(mfrow=c(1,1))
+plot(model_log,which=1)
+
+# Plot a Normal Q-Q. There are outliers at both ends indicating skewness and heavy tails and that our residuals are not normally distributed.  
+plot(model_log,which=2)
+
+# Plot Scale-Location. Points are roughly spread if the ouliers in the top right quadrant are disregarded.
+plot(model_log,which=3)
+
+# Plot Cook's Distance. This shows one point above .05 that should be acknowlged and potentially removed because of its influence. 
+plot(model_log,which=4)
+
+# Plot Residuals vs Leverage. There are some points with high leverage but they don't have high residuals as well so they are probably not influential.
+plot(model_log,which=5)
+```
+
+8.  Investigate unequal variances and multicollinearity. If necessary,
+    apply remedial methods (WLS, Ridge, Elastic Net, Lasso, etc.).
+
+```{r}
+library(glmnet)
+
+# Step 1: Investigate Unequal Variances
+
+# Check for heteroscedasticity using a formal test (e.g., Breusch-Pagan test). Results in a small p-value (e.g., p < 0.05): It suggests that there is evidence of heteroscedasticity, meaning that the variance of errors is likely not constant across different levels of the independent variables
+
+bp_test <- lmtest::bptest(model_log)
+print(bp_test)
+
+
+# Step 2: Investigate Multicollinearity
+# Check Variance Inflation Factors (VIF)
+# Results in variables "sqft_living: 8.63" and "sqft_above: 7.27" having moderate multicollinearity
+vif_values <- car::vif(model_log)
+
+# Print VIF values above 5
+high_vif_variables <- names(vif_values[vif_values > 5])
+high_vif_values <- vif_values[vif_values > 5]
+
+cat("Variables with VIF > 5:\n")
+for (i in seq_along(high_vif_variables)) {
+  cat(sprintf("%s: %.2f\n", high_vif_variables[i], high_vif_values[i]))
+}
+
+# Step 3: Apply Remedial Methods - Ridge, Lasso, and WLS Regression
+x <- model.matrix(model_log)[, -1]  # Exclude intercept column
+y <- train.dat$price
+
+# Ridge Regression
+ridge_model <- glmnet(x, y, alpha = 0, lambda = 0.1)  # Choose an appropriate lambda
+ridge_predictions <- predict(ridge_model, newx = x)
+ridge_residuals <- y - ridge_predictions
+
+# Lasso Regression
+lasso_model <- glmnet(x, y, alpha = 1, lambda = 0.1)  # Choose an appropriate lambda
+
+# Weighted Least Squares (WLS)
+wls_residuals <- residuals(model_log)
+weights <- 1 / wls_residuals^2  
+wls_model <- lm(y ~ ., data = train.dat, weights = weights)
+
+
+# Evaluate and compare the models
+ridge_predictions <- predict(ridge_model, newx = x)
+ridge_residuals <- y - ridge_predictions
+ridge_mse <- mean(ridge_residuals^2)
+ridge_rmse <- sqrt(ridge_mse)
+ridge_r_squared <- 1 - ridge_mse / var(y)
+
+lasso_predictions <- predict(lasso_model, newx = x)
+lasso_residuals <- y - lasso_predictions
+lasso_mse <- mean(lasso_residuals^2)
+lasso_rmse <- sqrt(lasso_mse)
+lasso_r_squared <- 1 - lasso_mse / var(y)
+
+wls_residuals <- residuals(wls_model)
+wls_mse <- mean(wls_residuals^2)
+wls_rmse <- sqrt(wls_mse)
+wls_r_squared <- 1 - wls_mse / var(y)
+
+# Compare the metrics
+comparison_table <- data.frame(
+  Model = c("Ridge", "Lasso", "WLS"),
+  RMSE = c(ridge_rmse, lasso_rmse, wls_rmse),
+  R_squared = c(ridge_r_squared, lasso_r_squared, wls_r_squared)
+)
+
+print(comparison_table)
+
+# Cross-validated Ridge model
+cv_ridge <- cv.glmnet(x, y, alpha = 0)
+
+# Cross-validated Lasso model
+cv_lasso <- cv.glmnet(x, y, alpha = 1)
+
+# Plot the results. Results in a
+plot(cv_ridge)
+plot(cv_lasso)
+```
+
+
+
+9.  Build an alternative model based on one of the following approaches
+    to predict price: regression tree, NN, or SVM. Check the applicable
+    model assumptions. Explore using a logistic regression.
+
+Predicting Price using Regression Tree.
+
+```{r}
+#Building Regression Tree to Predict Prices
+library(rpart)
+#Build Regression Model with Pruning
+m.rpart <- rpart(price ~ ., data = train.dat,cp=0.001 )
+m.rpart
+
+```
+
+```{r}
+
+library(rpart.plot)
+#Regression Tree Plot
+ rpart.plot(m.rpart, digits = 4, fallen.leaves = TRUE,type = 3, extra = 101)
+#Print Variables used in Tree Construction
+printcp(m.rpart)
+
+```
+
+
+Determining Price using SVM Model :
+
+```{r}
+library(e1071)
+
+# Build an SVM model
+svm_model <- svm(price ~ ., data = train.dat)
+
+# Print the model summary
+print(summary(svm_model))
+```
+
+
+Logistic Regression. 
+Convert Price to a binary 1(High) or 0(Low) to Predict Price.
+Predict Price_cat using the GLM method
+
+```{r}
+# Convert price to a binary variable for Logistic Regression
+train.dat$price_cat <- ifelse(train.dat$price > median(train.dat$price), 1, 0)
+# Convert price to a binary variable for Logistic Regression
+test.dat$price_cat <- ifelse(test.dat$price > median(test.dat$price), 1, 0)
+```
+```{r}
+
+
+# Build a logistic regression model
+log_model <- glm(price_cat ~ ., data = train.dat, family = binomial())
+
+# Print the model summary
+print(summary(log_model))
+
+```
+
+The logistic regression model will predict the price of the home in to two categories (high/low price) rather than actual price values. So will continue with the SVM/Regression Tree as we will need actual Price values which will be valuable.  
+
+10. Use the test data set to assess the model performances from above.
+
+Performance Testing for Regression Tree
+```{r}
+#evaluating model performance for Regression
+p.rpart <- predict(m.rpart, test.dat)
+#Summary for Predicted Price
+summary(p.rpart)
+#Summary for Price in Test Data
+summary(test.dat$price)
+#Correlation between Predicted Price and Test Data 
+cor(p.rpart, test.dat$price)
+```
+```{r}
+#Measuring performance with the mean absolute error
+MAE <- function(actual, predicted) {mean(abs(actual - predicted))}
+
+#The MAE for our predictions is then:
+MAE(test.dat$price,p.rpart)
+#Measuring performance with the SSE
+SSE <- function(actual, predicted) {sum((actual - predicted)^2)}
+SSE(test.dat$price,p.rpart)
+#Measuring performance with the RSquare
+R2 <- function(actual, predicted) {sum((actual - predicted)^2)/((length(actual)-1)*var(actual))}
+1-R2(test.dat$price,p.rpart)
+
+```
+
+The $R^2$ for the Regression Tree is 66%  indicating decent performance for the model but the MAE is significantly high.
+
+
+
+
+Performance Testing for SVM Model
+```{r}
+#evaluating model performance for Regression
+p.svm_model <- predict(svm_model, test.dat)
+#Summary for Predicted Price
+summary(p.svm_model)
+#Summary for Price in Test Data
+summary(test.dat$price)
+#Correlation between Predicted Price and Test Data 
+cor(p.svm_model, test.dat$price)
+```
+```{r}
+#Measuring performance with the mean absolute error
+MAE <- function(actual, predicted) {mean(abs(actual - predicted))}
+
+#The MAE for our predictions is then:
+MAE(test.dat$price,p.svm_model)
+#Measuring performance with the SSE
+SSE <- function(actual, predicted) {sum((actual - predicted)^2)}
+SSE(test.dat$price,p.svm_model)
+#Measuring performance with the RSquare
+R2 <- function(actual, predicted) {sum((actual - predicted)^2)/((length(actual)-1)*var(actual))}
+1-R2(test.dat$price,p.svm_model)
+
+```
+
+SVM Model Performed Better than Regression Tree and it has an R-squared value of 79% compared with 66%. We will use the SVM Model as our Alternate Model to Predict Price.
+
+
+
+11. Based on the performances on both train and test data sets,
+    determine your primary (champion) model and the other model which
+    would be your benchmark model.
+    
+```{r}
+#evaluating model performance for Regression
+model_log.predicted_values <- exp(predict(model_log, test.dat))
+#Summary for Predicted Price
+summary(model_log.predicted_values)
+#Summary for Price in Test Data
+summary(test.dat$price)
+#Correlation between Predicted Price and Test Data 
+cor(model_log.predicted_values, test.dat$price)
+```
+    
+```{r}
+#Measuring performance with the mean absolute error
+MAE <- function(actual, predicted) {mean(abs(actual - predicted))}
+#The MAE for our predictions is then:
+MAE(test.dat$price, model_log.predicted_values)
+
+#Measuring performance with the SSE
+SSE <- function(actual, predicted) {sum((actual - predicted)^2)}
+RMSE <- function(actual, predicted) {sqrt(SSE(actual,predicted)/length(actual))}
+
+sse.test.model_log <- SSE(test.dat$price, model_log.predicted_values)
+sse.test.model_log
+
+rmse.test.model_log <- RMSE(test.dat$price, model_log.predicted_values)
+rmse.test.model_log
+
+#Measuring performance with the RSquare
+R2 <- function(actual, predicted) {sum((actual - predicted)^2)/((length(actual)-1)*var(actual))}
+1-R2(test.dat$price, model_log.predicted_values)
+```
+Based on the Performance Testing on Test Data we found that SVM Performed Better than Linear Model and hence Champion Model will be SVM. 
+
+
+12. Create a model development document that describes the model
+    following this template, input the name of the authors, Harvard IDs,
+    the name of the Group, all of your code and calculations, etc..:
+
+## Due Date: December 18th, 2023 at 11:59 pm EST
+
+**Notes** **No typographical errors, grammar mistakes, or misspelled
+words, use English language** **All tables need to be numbered and
+describe their content in the body of the document** **All
+figures/graphs need to be numbered and describe their content** **All
+results must be accurate and clearly explained for a casual reviewer to
+fully understand their purpose and impact** **Submit both the RMD
+markdown file and PDF with the sections with appropriate explanations. A
+more formal document in Word can be used in place of the pdf file but
+must include all appropriate explanations.**
+
+Executive Summary
+
+This section will describe the model usage, your conclusions and any
+regulatory and internal requirements. In a real world scneario, this
+section is for senior management who do not need to know the details.
+They need to know high level (the purpose of the model, limitations of
+the model and any issues).
+
+\newpage
+
+## I. Introduction (5 points)
+
+*This section needs to introduce the reader to the problem to be
+resolved, the purpose, and the scope of the statistical testing applied.
+What you are doing with your prediction? What is the purpose of the
+model? What methods were trained on the data, how large is the test
+sample, and how did you build the model?*
+
+Our dataset is a housing dataset that has 21613 observations distributed on 21 variables, 
+of which Price was our predicted variable. We divided dataset into train and test by a 70-30 
+split utilizing the seed for replicability. That left us with 6484 test observations.
+
+We will be processing the dataset to ensure that variables are ready for linear
+model development such as utilizing dummies and converting to right type. We will 
+be selecting variables of interest via auto-selection mechanisms and drop variables 
+with high multi-collinearity to improve model robustness.
+
+Ordinary least squared (OLS) linear regression is what we will use as the linear
+model as the base case to determine what we can accomplish without more 
+sophisticated techniques to form a baseline. 
+
+Subsequently we will use more advanced techniques such as Logistic Regression,
+Regression Tree and Support Vector Machine (SVM). 
+
+We will be analyzing the dataset for assumptions validity in regards to linear 
+and finalist model, and apply remedial measures such as Ridge and Lasso 
+regression as well as WLS to improve deficiencies as necessary.
+
+Finally we will be selecting a finalist model from all other alternatives based
+on performance in prediction as well as adherence to model assumptions.
+
+\newpage
+
+## II. Description of the data and quality (15 points)
+
+*Here you need to review your data, the statistical test applied to
+understand the predictors and the response and how are they correlated.
+Extensive graph analysis is recommended. Is the data continuous, or
+categorical, do any transformation needed? Do you need dummies?*
+
+Analyzing the data, we have several variables that are not valuable.
+Specifically, ID, latitude, and longitude do not hold value in the
+regression. On top of that, zipcode has 70 different variables upon
+analysis and thus would be too many categories to be meaningful in
+creating categorical variables. On top of that, date sold, date built
+and year renovated are not valuable because they cannot be used in
+calculation for the sold price. Instead, we have chosen to transform
+them into age (years) since built and age (years) since renovated --
+these are two new categorical variables.
+
+Price additionally had to be changed from string into int such that we
+could use it as the response variable. Inspecting the scatterplots of
+the predictor variables versus the response, there are several emerging
+trends. Bedroom vs Price appears to have an outlier at \~33 bedrooms.
+Bathrooms vs price, sqft_living, grade sqft_above, sqft_below,
+sqft_living15 also all have a clear positive linear relationship with
+price. Other variables such as sqft_lot require further inspection
+because at lot sizes near 0, some prices are very high. This could make
+sense because lot sizes in cities are much smaller but prices could be
+high.
+
+Zipcode is a variable that we used Dummies on, because even though it is 
+an integer, there was no ordinal relationship between them (i.e. 90001 is not
+lesser or greater than 90002) leaving us with a large number of categorical 
+variables. 
+
+\newpage
+
+## III. Model Development Process (15 points)
+
+*Build a regression model to predict price. And of course, create the
+train data set which contains 70% of the data and use set.seed (1023).
+The remaining 30% will be your test data set. Investigate the data and
+combine the level of categorical variables if needed and drop variables.
+For example, you can drop id, Latitude, Longitude, etc.*
+
+First model we developed after performing multiple transformations on
+data: 1. we transformed a new numeric variable called house_age which is
+the year difference between construction and purchase 2. we transformed
+a new categorical variable called renovated or not as to if it has a
+year of renovation or not 3. we transformed a new series of dummy
+variables based on zip_code.
+
+Subsequently we removed variables due to multicollinearity concerns
+(yr_built, yr_renovated, sqft_basement and zipcode_98199).
+
+When we ran our first model (variable model) as above with all variables
+included with the formula lm(formula = price \~ ., data = data), model
+had p-value of F-test as \< 2.2e-16 and $R^2$ as 0.8048.
+
+Subsequently we ran a backwards stepwise OLS to eliminate variables
+based on p-value which allowed us to remove several zipcodes with low
+statistical significance, leaving us with our second model (variable
+model_2) with the formula as lm(price \~ . - zipcode_98056 -
+zipcode_98136 - zipcode_98045 - zipcode_98072, data = train.dat),
+model_2 had p-value of F-test as \< 2.2e-16 and $R^2$ as 0.8047. Removal
+of variables did not improve model statistical significant nor
+predictive power a whole lot.
+
+Afterwards we analyzed boxcox transformation technique and discovered
+that a log transformation can be beneficial to improve the model further
+which lead us to our third model (variable model_log) with the formula
+as model_log \<-lm(log(price) \~ . - zipcode_98056 - zipcode_98136 -
+zipcode_98045 - zipcode_98072, data = train.dat), model_3 had p-value of
+F-test as \< 2.2e-16 and $R^2$ as 0.8753.Significantly improving
+predictive power of the model while ensuring statistical significance.
+
+\newpage
+
+## IV. Model Performance Testing (15 points)
+
+*Use the test data set to assess the model performances. Here, build the
+best multiple linear models by using the stepwise both ways selection
+method. Compare the performance of the best two linear models. Make sure
+that model assumption(s) are checked for the final linear model. Apply
+remedy measures (transformation, etc.) that helps satisfy the
+assumptions. In particular you must deeply investigate unequal variances
+and multicollinearity. If necessary, apply remedial methods (WLS, Ridge,
+Elastic Net, Lasso, etc.).*
+
+We tested the basic model assumptions by analyzing Residuals vs Fitted, QQ-Plot, Scale-Location, Cook's Distance, and Residuals vs Leverage plots. The Residuals vs Fitted plot concludes that the data is non-linear as the shape of the data points is clustered tightly in a cone-like shape. The QQ-Plot indicated that the data has a heavy-tail distribution as the datapoints follow a strong 'S' shape at the extremes. The Residuals vs Leverage and Cook's Distance plots indicates a few datapoints as being strong outliers. Finally, the Scale-Location plot demonstrated that the data did not have equal variance as the reference line trended below zero, indicating an underfit of the data.
+
+Our remedial methods included creating Ridge and Lasso regression models. Both the Ridge and Lasso models fit the data with an R-squared of roughly 0.80, which is less than the R-squared of the default linear model.
+
+
+\newpage
+
+## V. Challenger Models (15 points)
+
+*Build an alternative model based on one of the following approaches to
+predict price: regression tree, NN, or SVM. Explore using a logistic
+regression. Check the applicable model assumptions. Apply in-sample and
+out-of-sample testing, backtesting and review the comparative goodness
+of fit of the candidate models. Describe step by step your procedure to
+get to the best model and why you believe it is fit for purpose.*
+
+For the Challenger Model we have utilized the same transformed dataset to build the Alternate Model. The Transformed data is split into Training set and Testing Dataset and we will use the Training Dataset to create the Model. We have selected SVM as our model to Predict Price.
+
+The logistic regression model will predict the price of the home in to two categories (high/low price) rather than actual price values. Although it might have high accuracy we will continue with the SVM as we will need actual Price values which will be valuable. 
+
+SVM Model Assumptions:The Residuals in the below view (Residuals vs fitted values) show that they are randomly scattered around the horizontal line indicating homoscedasticity. However, there are some points with high residuals, especially for higher fitted values, which could be outliers or indicate that the model fits less well in that range. The Q-Q plot for the Model shows that the model is normally distributed across the line except for few outliers at the tails.
+
+```{r}
+ 
+
+ # Q-Q plot of residuals
+qqnorm(residuals(svm_model))
+qqline(residuals(svm_model))
+
+ 
+fitted_values <- fitted(svm_model)
+plot(fitted_values, svm_model$residuals, main = "Residuals vs. Fitted Values",
+xlab = "Fitted Values", ylab = "Residuals")
+abline(h = 0, col = "red")
+
+
+```
+In-Sample and Out sample Testing of the Model:
+
+
+In Sample Testing:
+```{r}
+#evaluating model performance for Regression
+p_train.svm_model <- predict(svm_model, train.dat)
+#Summary for Predicted Price
+summary(p_train.svm_model)
+#Summary for Price in Test Data
+summary(train.dat$price)
+#Correlation between Predicted Price and Test Data 
+cor(p_train.svm_model, train.dat$price)
+```
+```{r}
+#Measuring performance with the mean absolute error
+MAE <- function(actual, predicted) {mean(abs(actual - predicted))}
+
+#The MAE for our predictions is then:
+MAE(train.dat$price,p_train.svm_model)
+#Measuring performance with the SSE
+SSE <- function(actual, predicted) {sum((actual - predicted)^2)}
+SSE(train.dat$price,p_train.svm_model)
+#Measuring performance with the RSquare
+R2 <- function(actual, predicted) {sum((actual - predicted)^2)/((length(actual)-1)*var(actual))}
+1-R2(train.dat$price,p_train.svm_model)
+
+```
+Out Sample Testing :
+
+```{r}
+#evaluating model performance for Regression
+p_test.svm_model <- predict(svm_model, test.dat)
+#Summary for Predicted Price
+summary(p_test.svm_model)
+#Summary for Price in Test Data
+summary(test.dat$price)
+#Correlation between Predicted Price and Test Data 
+cor(p_test.svm_model, test.dat$price)
+```
+```{r}
+#Measuring performance with the mean absolute error
+MAE <- function(actual, predicted) {mean(abs(actual - predicted))}
+
+#The MAE for our predictions is then:
+MAE(test.dat$price,p_test.svm_model)
+#Measuring performance with the SSE
+SSE <- function(actual, predicted) {sum((actual - predicted)^2)}
+RMSE <- function(actual, predicted) {sqrt(SSE(actual,predicted)/length(actual))}
+
+sse.test.svm_model <- SSE(test.dat$price,p_test.svm_model)
+sse.test.svm_model
+
+rmse.test.svm_model <- RMSE(test.dat$price,p_test.svm_model)
+rmse.test.svm_model
+
+#Measuring performance with the RSquare
+R2 <- function(actual, predicted) {sum((actual - predicted)^2)/((length(actual)-1)*var(actual))}
+1-R2(test.dat$price,p_test.svm_model)
+
+```
+ 
+In-sample Testing Performance:
+
+Correlation: The correlation between the predicted prices and the actual prices in the training data is 0.9339161, which is quite high.
+MAE : The average absolute error between the predicted prices and the actual prices in the training data is 63,504.05.
+SSE :  2.69e+14.
+R-squared:  For the training data is 0.8640814.
+
+Out-of-sample Testing Performance:
+
+Correlation: The correlation between the predicted prices and the actual prices in the test data is 0.89658, which is also quite high and indicates good predictive performance.
+MAE : The average absolute error between the predicted prices and the actual prices in the test data is 72,583.85.
+SSE:  1.92e+14.
+R-squared: For the test data is 0.794724.
+
+The SVM model shows a strong performance in both in-sample and out-of-sample testing, with high correlation and R-squared values and relatively low errors. 
+
+Comparing the SVM Models with other Model like Regression Tree which has the R-squared of 66% and the MAE is on lower end for SVM it is evident that the Model has performed significantly better than Regression Tree and based on it we can say the SVM Model has better goodness of fit.
+
+\newpage
+
+## VI. Model Limitation and Assumptions (15 points)
+
+*Based on the performances on both train and test data sets, determine
+your primary (champion) model and the other model which would be your
+benchmark model. Validate your models using the test sample. Do the
+residuals look normal? Does it matter given your technique? How is the
+prediction performance using Pseudo R\^2, SSE, RMSE? Benchmark the model
+against alternatives. How good is the relative fit? Are there any
+serious violations of the model assumptions? Has the model had issues or
+limitations that the user must know? (Which assumptions are needed to
+support the Champion model?)*
+
+\newpage
+
+Based on the performances on both train and test data sets we choose the SVM model as the primary model and the linear model as the benchmark model.
+We have validated both the SVM (champion) model and the linear (benchmark) model against train and test data above.
+
+For the SVM (champion) model 
+
+The R-squared value for the train data is 86% and for the test data is 79%.
+
+The MAE is $72,583, the SSE is 1.990518e+14 and the RMSE is 175211.1 for test data.
+
+For the linear (benchmark) model the R-squared value for the train data is 85% and for the test data is 64%.
+
+The MAE is $84,891, the SSE is 3.36351e+14 and the RMSE is 227758.6 for test data.
+
+Based on the numbers above the SVM (champion) model seems to perform better than the linear (benchmark) model.
+
+Given a R-squared value of 79% on the test data, the SVM (champion) model seems a reasonable fit to the dataset.
+
+
+Residuals for test data
+
+The SVM (champion) model residuals seem to increase less rapidly than the linear (benchmark) model.
+
+The linear (benchmark) model seems to have large residual for higher fitted values.
+
+```{r}
+#Test data Residuals vs. Fitted Values for SVM (champion) model
+plot(p_test.svm_model, test.dat$price - p_test.svm_model, main = "Test data Residuals vs. Fitted Values for SVM (champion) model",
+xlab = "Fitted Values", ylab = "Residuals")
+abline(h = 0, col = "red")
+
+#Test data Residuals vs. Fitted Values for Linear (benchmark) model
+plot(model_log.predicted_values, test.dat$price - model_log.predicted_values, main = "Test data Residuals vs. Fitted Values for Linear (benchmark) model",
+xlab = "Fitted Values", ylab = "Residuals")
+abline(h = 0, col = "red")
+
+```
+
+Model Assumptions
+
+Our model is a "eps-regression" SVM model. "eps-regression" means epsilon-insensitive regression in the context of Support Vector Machines (SVMs). Epsilon-insensitive regression is a variation of SVM designed for regression tasks, where the goal is to predict a continuous outcome rather than class labels. It is henceforth referred to as just SVM.
+
+Our champion model SVM, is generally less sensitive to the assumptions of normality of residuals compared to other traditional linear regression models.
+
+Our champion model SVM, is also less sensitive to the assumption of normality of residuals compared to other traditional linear regression models.
+
+It is also designed to be robust to outliers.
+
+Model issues and limitations
+
+Just like other traditional regression models SVM assumes the observations are independent and identically distributed (IID) [1].
+
+
+Multi-variate Shapiro-Wilks test demonstrate that data is **NOT** normally distributed.
+
+```{r}
+# TODO Check if this is the right test
+# H0: Normally distributed
+# H1: Data is not normally distributed
+
+library(mvnormtest)
+
+#Multi-variate shapiro test sample size max is 5000 so will take first 5000
+#test is already randomized
+original_data_normal <- original_data %>% select(-c(id, lat, long, date, yr_built, yr_renovated, sqft_basement, price))
+mshapiro.test(t(original_data_normal[1:5000,]))
+
+```
+## VII. Ongoing Model Monitoring Plan (5 points)
+
+*How would you picture the model needing to be monitored, which
+quantitative thresholds and triggers would you set to decide when the
+model needs to be replaced? What are the assumptions that the model must
+comply with for its continuous use?*
+
+A model must be monitored to make sure that it is still effective and that there haven't been any changes that make the current model no longer relevant. The data science team must set up thresholds that the model must meet to ensure these assumptions are met. If the thresholds aren't met, the model needs to trigger so that it can be reviewed.
+ Here are some considerations for monitoring a model and setting quantitative thresholds and triggers:
+
+1. Performance Metrics:
+Thresholds:accuracy, precision, recall, F1 score
+Triggers: alerts and review if the performance metrics fall below or deviate significantly from the established thresholds.
+2. Data Drift:
+Thresholds: comparing the distribution of incoming data with the distribution used during model training.
+Triggers: Set triggers to retrain the model if significant data drift is detected, indicating that the underlying patterns have changed.
+3. Feature Importance:
+Thresholds: If certain features become less relevant or more noisy, it may impact the model's performance.
+Triggers: Reevaluate or update the model if the importance of critical features decreases or if new important features emerge.
+4. Model Calibration:
+Thresholds: ensure predicted probabilities align with observed outcomes.
+Triggers: Recalibrate the model if systematic mis-calibration is identified.
+5. Regulatory Compliance:
+Thresholds: Monitor for any changes in regulations that may impact the model's usage.
+Triggers: If regulations change, assess whether the model needs adjustments or retraining to maintain compliance.
+6. Model Decay:
+Thresholds: Define acceptable levels of model decay over time, considering the nature of the problem.
+Triggers: If the model's performance degrades beyond acceptable decay limits, consider retraining or replacing it.
+7. Business Metrics:
+Thresholds: Align model performance with key business metrics (e.g., revenue, customer satisfaction).
+Triggers: If there are significant changes in business metrics not explained by other factors, investigate the model's contribution.
+
+Assumptions for Continuous Use:
+Stationarity: Assure that the underlying patterns in the data remain relatively stable over time.
+Data Quality: Assume ongoing data quality and consistency to maintain model relevance.
+Relevance: The business problem and context remain consistent.
+
+Continuous Improvement:
+Feedback Loop: Establish a feedback loop for continuous improvement based on real-world performance.
+
+By continuously monitoring the model and determining thresholds that active a trigger so that the the model can be assessed, reviewed, and updated when neccessary makes sure the model's performance is as good as possible and doesn't start to decline. This is necessary because the conditions can change over time given the above reasons. For the model to be continuously effective, it must adhere to several critical assumptions and conditions sch as stationarity. If the model doesn't have these thresholds and triggers, it can decline as the new data no longer fits a model that was trained on older data with different qualities.
+
+\newpage
+
+## VIII. Conclusion (5 points)
+
+*Summarize your results here. What is the best model for the data and
+why?*
+
+SVM is the best model for data because of two fundamental reasons:
+1. $R^2$ of 0.7868631 on the test data which is better than base case (linear)
+and other models.
+2. SVM assumptions of independence and identical distribution are partially valid
+as we removed high collinearity variables but found data distribution to be 
+non-normal, but weakens the distribution assumption. In comparison to second best
+model which was the Linear, which has very serious assumption violations as described 
+above.
+
+## Bibliography (7 points)
+
+*Please include all references, articles and papers in this section.*
+
+1. Foulds, J., & Frank, E. (2010). A review of multi-instance learning assumptions. The Knowledge Engineering Review, 25(1), 1-25. doi:10.1017/S026988890999035X
+
+
+## Appendix (3 points)
+
+*Please add any additional supporting graphs, plots and data analysis.*
+
+Sections above the write-up include all supporting graphs, plots and data analysis.

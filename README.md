@@ -1,61 +1,61 @@
-House Price Prediction Project
-This project aims to predict house prices using various regression and machine learning models. The dataset used is KC_House_Sales.csv, which contains information about house sales in King County. The project involves data preparation, exploratory analysis, model building, evaluation, and documentation.
+# House Price Prediction Project
 
-Project Steps
-Team Formation
+This project aims to predict house prices using various regression and machine learning models. The dataset used is `KC_House_Sales.csv`, which contains information about house sales in King County. The project involves data preparation, exploratory analysis, model building, evaluation, and documentation.
 
-Joined a team of four students to collaboratively work on the project.
-Data Loading and Review
+## Project Steps
 
-Loaded the dataset KC_House_Sales.csv and performed an initial review to understand its structure and contents.
-Data Splitting
+1. **Team Formation**
+   - Joined a team of four students to collaboratively work on the project.
 
-Split the dataset into training (70%) and testing (30%) sets using a random seed of 1023 to ensure reproducibility.
-Data Preparation
+2. **Data Loading and Review**
+   - Loaded the dataset `KC_House_Sales.csv` and performed an initial review to understand its structure and contents.
 
-Investigated and cleaned the data by combining categorical variables, dropping irrelevant variables (such as id, Latitude, Longitude), and addressing any data quality issues.
-Exploratory Data Analysis
+3. **Data Splitting**
+   - Split the dataset into training (70%) and testing (30%) sets using a random seed of 1023 to ensure reproducibility.
 
-Created scatter plots and a correlation matrix for the training dataset to visualize and interpret the relationships between variables and their potential impact on the response variable, price.
-Model Building and Selection
+4. **Data Preparation**
+   - Investigated and cleaned the data by combining categorical variables, dropping irrelevant variables (such as `id`, `Latitude`, `Longitude`), and addressing any data quality issues.
 
-Built multiple linear regression models using stepwise selection to identify the best models.
-Compared the performance of the top two linear models based on various metrics.
-Model Assumptions
+5. **Exploratory Data Analysis**
+   - Created scatter plots and a correlation matrix for the training dataset to visualize and interpret the relationships between variables and their potential impact on the response variable, `price`.
 
-Checked assumptions for the final model (e.g., linearity, normality of residuals) and applied remedial measures, such as transformations if necessary.
-Variance and Multicollinearity
+6. **Model Building and Selection**
+   - Built multiple linear regression models using stepwise selection to identify the best models.
+   - Compared the performance of the top two linear models based on various metrics.
 
-Investigated issues related to unequal variances and multicollinearity.
-Applied remedial methods (e.g., Weighted Least Squares, Ridge, Elastic Net, Lasso) where needed to address these issues.
-Alternative Modeling Approaches
+7. **Model Assumptions**
+   - Checked assumptions for the final model (e.g., linearity, normality of residuals) and applied remedial measures, such as transformations if necessary.
 
-Built and evaluated an alternative model using one of the following approaches: regression tree, neural network (NN), or support vector machine (SVM).
-Checked the applicable model assumptions and explored logistic regression if relevant.
-Model Evaluation
+8. **Variance and Multicollinearity**
+   - Investigated issues related to unequal variances and multicollinearity.
+   - Applied remedial methods (e.g., Weighted Least Squares, Ridge, Elastic Net, Lasso) where needed to address these issues.
 
-Assessed the performance of the models using the test dataset to ensure they generalize well to unseen data.
-Model Selection
+9. **Alternative Modeling Approaches**
+   - Built and evaluated an alternative model using one of the following approaches: regression tree, neural network (NN), or support vector machine (SVM).
+   - Checked the applicable model assumptions and explored logistic regression if relevant.
 
-Based on performance metrics from both the training and test datasets, determined the primary (champion) model and identified a benchmark model for comparison.
-Documentation
+10. **Model Evaluation**
+    - Assessed the performance of the models using the test dataset to ensure they generalize well to unseen data.
 
-Created a comprehensive model development document that describes the model, methodology, and findings, following the provided template.
-Project Team
-[Student 1]
-[Student 2]
-[Student 3]
-[Student 4]
-How to Run the Project
-Ensure you have the necessary libraries installed. You can install them using pip:
+11. **Model Selection**
+    - Based on performance metrics from both the training and test datasets, determined the primary (champion) model and identified a benchmark model for comparison.
 
-bash
-Copy code
-pip install pandas numpy matplotlib seaborn scikit-learn statsmodels
-Load the dataset and follow the steps outlined in the project. The code is organized into Jupyter notebooks/scripts corresponding to each step of the project.
+12. **Documentation**
+    - Created a comprehensive model development document that describes the model, methodology, and findings, following the provided template.
 
-Refer to the documentation for detailed explanations of the methodologies used and the results obtained.
+## Project Team
 
-License
-This project is licensed under the MIT License. See the LICENSE file for more details.
+- [Hannah Halvorsen]
+- [Daniel Yinanc]
+- [Swapnil Diangade]
+- [Sravan Katepalli]
+- [Phu Thai]
+- [Sheri Cunningham]
+
+## How to Run the Project
+
+1. Ensure you have the necessary libraries installed. You can install them using pip:
+   ```bash
+   pip install pandas numpy matplotlib seaborn scikit-learn statsmodels
+
 
